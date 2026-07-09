@@ -19,7 +19,7 @@ import { FILE_UPLOAD_CONFIG } from '../utils/constants';
 
 export default function UploadPage() {
   const navigate = useNavigate();
-  const { uploadResume, analyzeResume, isAnalyzing, currentResume } = useResume();
+  const { uploadResume, analyzeResume, currentResume } = useResume();
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [error, setError] = useState('');
@@ -48,13 +48,21 @@ export default function UploadPage() {
 
       try {
         await uploadResume(file);
-        setUploadStage('uploaded');
-      } catch {
-        setError('Failed to upload file. Please try again.');
+        // server-side parsing completes during uploadResume; navigate to analysis
+        setUploadStage('analyzing');
+        navigate('/analysis');
+      } catch (error) {
+        if (error instanceof Error) {
+          setError(`Upload failed: ${error.message}`);
+        } else if (typeof error === 'string') {
+          setError(`Upload failed: ${error}`);
+        } else {
+          setError('Upload failed: Please try again.');
+        }
         setUploadStage('idle');
       }
     },
-    [uploadResume]
+    [uploadResume, navigate]
   );
 
   const { getRootProps, getInputProps, isDragActive, isDragReject } = useDropzone({

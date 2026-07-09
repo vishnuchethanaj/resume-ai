@@ -20,15 +20,15 @@ export interface Resume {
 
 export interface ExtractedResumeData {
   personalInfo: {
-    name: string;
-    email: string;
-    phone: string;
-    linkedin?: string;
-    github?: string;
-    portfolio?: string;
-    address?: string;
+    name: string | null;
+    email: string | null;
+    phone: string | null;
+    linkedin?: string | null;
+    github?: string | null;
+    portfolio?: string | null;
+    address?: string | null;
   };
-  summary: string;
+  summary: string | null;
   education: Education[];
   experience: Experience[];
   projects: Project[];
@@ -36,6 +36,7 @@ export interface ExtractedResumeData {
   certificates: Certificate[];
   languages: Language[];
   achievements: string[];
+  rawText?: string;
 }
 
 export interface Education {

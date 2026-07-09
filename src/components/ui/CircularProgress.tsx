@@ -34,7 +34,7 @@ export default function CircularProgress({
         <defs>
           <linearGradient id="successGradient" x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor="#22c55e" />
-            <stop offset="100%" stopColor="#10b981" />
+            <stop offset="100%" stopColor="#3b82f6" />
           </linearGradient>
           <linearGradient id="warningGradient" x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor="#f59e0b" />

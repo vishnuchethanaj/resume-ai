@@ -462,6 +462,23 @@ export default function AnalysisPage() {
             </Card>
           </motion.div>
 
+          {/* Raw extracted resume text debug panel */}
+          <motion.div variants={itemVariants}>
+            <Card className="p-6">
+              <CardHeader className="px-0 pt-0 pb-4 border-b border-secondary-200 dark:border-secondary-800">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-primary-500" />
+                  <h2 className="font-semibold text-secondary-900 dark:text-white">Raw Extracted Text</h2>
+                </div>
+              </CardHeader>
+              <CardBody className="px-0 pb-0 pt-4">
+                <pre className="max-h-72 overflow-y-auto whitespace-pre-wrap break-words rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-3 text-xs text-secondary-700 dark:border-secondary-800 dark:bg-secondary-900 dark:text-secondary-300">
+                  {extractedData.rawText || 'No extracted raw text available.'}
+                </pre>
+              </CardBody>
+            </Card>
+          </motion.div>
+
           {/* Suggestions */}
           {latestReport?.suggestions && latestReport.suggestions.length > 0 && (
             <motion.div variants={itemVariants}>

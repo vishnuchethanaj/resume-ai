@@ -29,7 +29,6 @@ const navItems = [
 ];
 
 const bottomNavItems = [
-  { icon: User, label: 'Profile', path: '/profile' },
   { icon: Settings, label: 'Settings', path: '/settings' },
 ];
 

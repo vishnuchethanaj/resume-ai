@@ -31,7 +31,7 @@ import {
   Cell,
 } from 'recharts';
 
-const COLORS = ['#10b981', '#14b8a6', '#3b82f6', '#f59e0b', '#8b5cf6'];
+const COLORS = ['#3b82f6', '#60a5fa', '#3b82f6', '#f59e0b', '#8b5cf6'];
 
 export default function DashboardPage() {
   const { resumes, currentResume, atsScore } = useResume();
@@ -208,9 +208,9 @@ export default function DashboardPage() {
                   <Line
                     type="monotone"
                     dataKey="score"
-                    stroke="#10b981"
+                    stroke="#3b82f6"
                     strokeWidth={3}
-                    dot={{ fill: '#10b981', strokeWidth: 2 }}
+                    dot={{ fill: '#3b82f6', strokeWidth: 2 }}
                     activeDot={{ r: 6 }}
                   />
                 </LineChart>
