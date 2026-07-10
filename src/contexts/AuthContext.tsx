@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import type { User } from '../types';
 
 interface AuthContextType {
@@ -7,6 +7,8 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
+  startGoogleAuth: () => void;
+  refreshSession: () => Promise<void>;
   logout: () => void;
   forgotPassword: (email: string) => Promise<void>;
 }
@@ -16,18 +18,60 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const API_BASE = import.meta.env.VITE_API_URL || '';
+
+  const mapServerUserToClient = (serverUser: any): User | null => {
+    if (!serverUser) return null;
+
+    return {
+      id: serverUser._id || serverUser.id || serverUser.googleId || 'google-user',
+      email: serverUser.email || '',
+      name: serverUser.displayName || serverUser.name || serverUser.email?.split('@')?.[0] || 'User',
+      avatar: serverUser.photo || serverUser.avatar,
+      createdAt: serverUser.createdAt ? new Date(serverUser.createdAt) : new Date(),
+      plan: 'free',
+    };
+  };
+
+  const refreshSession = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/auth/user`, {
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        return;
+      }
+
+      const data = await response.json();
+      const sessionUser = mapServerUserToClient(data.user);
+
+      if (sessionUser) {
+        setUser(sessionUser);
+        localStorage.setItem('user', JSON.stringify(sessionUser));
+      }
+    } catch {
+      // Fall back to local storage below.
+    }
+  }, [API_BASE]);
 
   useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (stored) {
-      try {
-        setUser(JSON.parse(stored));
-      } catch {
-        localStorage.removeItem('user');
+    const init = async () => {
+      const stored = localStorage.getItem('user');
+      if (stored) {
+        try {
+          setUser(JSON.parse(stored));
+        } catch {
+          localStorage.removeItem('user');
+        }
       }
-    }
-    setIsLoading(false);
-  }, []);
+
+      await refreshSession();
+      setIsLoading(false);
+    };
+
+    init();
+  }, [refreshSession]);
 
   const login = async (email: string, _password: string) => {
     setIsLoading(true);
@@ -59,6 +103,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   };
 
+  const startGoogleAuth = () => {
+    const authUrl = `${API_BASE}/auth/google`;
+    window.location.assign(authUrl);
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
@@ -76,6 +125,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         login,
         register,
+        startGoogleAuth,
+        refreshSession,
         logout,
         forgotPassword,
       }}

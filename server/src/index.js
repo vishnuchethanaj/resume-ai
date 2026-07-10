@@ -18,6 +18,13 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 const MONGO_URI = process.env.MONGO_URI;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+const GOOGLE_AUTH_ENABLED = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+
+function resolveFrontendRedirect(req) {
+  const stored = req.session?.oauthReturnTo;
+  if (stored && typeof stored === 'string') return stored;
+  return FRONTEND_URL;
+}
 
 if (!MONGO_URI) {
   console.error('MONGO_URI is required in environment');
@@ -63,15 +70,45 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // Auth routes
-app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+app.get('/auth/google', (req, res, next) => {
+  if (!GOOGLE_AUTH_ENABLED) {
+    return res.status(503).json({ error: 'Google authentication is not configured on the server.' });
+  }
+
+  const requestOrigin = req.get('origin');
+  if (requestOrigin) {
+    req.session.oauthReturnTo = requestOrigin;
+  } else {
+    req.session.oauthReturnTo = FRONTEND_URL;
+  }
+
+  return passport.authenticate('google', { scope: ['profile', 'email'] })(req, res, next);
+});
 
 app.get(
   '/auth/google/callback',
-  passport.authenticate('google', { failureRedirect: `${FRONTEND_URL}/login`, session: true }),
-  (req, res) => {
-    // Successful auth, redirect to frontend with minimal user info
-    res.redirect(`${FRONTEND_URL}/auth-success`);
-  }
+  (req, res, next) => {
+    if (!GOOGLE_AUTH_ENABLED) {
+      return res.redirect(`${resolveFrontendRedirect(req)}/login?auth=google-unavailable`);
+    }
+
+    return passport.authenticate('google', { session: true }, (err, user) => {
+      if (err || !user) {
+        return res.redirect(`${resolveFrontendRedirect(req)}/login?auth=google-failed`);
+      }
+
+      req.logIn(user, (loginErr) => {
+        if (loginErr) {
+          return res.redirect(`${resolveFrontendRedirect(req)}/login?auth=google-failed`);
+        }
+
+        const redirectBase = resolveFrontendRedirect(req);
+        delete req.session.oauthReturnTo;
+        return res.redirect(`${redirectBase}/auth-success`);
+      });
+    })(req, res, next);
+  },
+  (req, res) => res.redirect(`${resolveFrontendRedirect(req)}/auth-success`)
 );
 
 app.get('/api/auth/user', (req, res) => {
